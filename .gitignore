@@ -1,0 +1,39 @@
+# =============== #
+# Unity generated #
+# =============== #
+Temp/
+Obj/
+UnityGenerated/
+Library/
+Build/
+
+# ===================================== #
+# Visual Studio / MonoDevelop generated #
+# ===================================== #
+ExportedObj/
+*.svd
+*.userprefs
+*.csproj
+*.pidb
+*.suo
+*.sln
+*.user
+*.unityproj
+*.booproj
+*.a
+# ============ #
+# OS generated #
+# ============ #
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
+Assets/AssetStoreStuff/Finns Minecraft Items v.1.meta
+Assets/AssetStoreStuff/Finns Minecraft Items v.1/HI-Res-tetxures.meta
+Assets/AssetStoreStuff/Finns Minecraft Items v.1/Old Stuff that might take your interest.meta
+Assets/AssetStoreStuff/Finns Minecraft Items v.1/Old Stuff that might take your interest/Blocks.meta
+Assets/AssetStoreStuff/Minecraft 3D Essentials.meta
