@@ -46,7 +46,8 @@ public class Shield : MonoBehaviour {
 
 		float planetRadius = _parentPlanet.transform.lossyScale.x;
 
-		float shieldScale = (planetRadius + energy * EnergyToShieldRadius) / planetRadius;
+		float shieldScale = (planetRadius + (energy * EnergyToShieldRadius)) / planetRadius;
+
 
 		transform.localScale = new Vector3(shieldScale,shieldScale,shieldScale);
 	}

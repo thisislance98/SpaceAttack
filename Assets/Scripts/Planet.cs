@@ -4,14 +4,15 @@ using System.Collections;
 public class Planet : MonoBehaviour {
 
 	public Transform ShieldPrefab;
+	public Transform SelectionPrefab;
 	public Material[] Materials;
 	public float MaxRotationSpeed;
 	public float MinRotationSpeed;
 	public float MinStartShieldScale = 1.01f;
 	public float MaxStartShieldScale = 1.5f;
 	public float EnergyRegenRate = 10;
-	public float DefaultEnergyUsedPerFire = .5f;
 
+	float _selectionPercent = .5f;
 	Shield _shield;
 	float _energy;
 	float _rotationSpeed;
@@ -39,10 +40,13 @@ public class Planet : MonoBehaviour {
 		_energy = GetStartEnergy();
 
 		OnNewOwner(playerType);
-	
-		_selectionRenderer = ((Transform)Instantiate(ShieldPrefab,transform.position,Quaternion.identity)).GetComponent<Renderer>();
+
+
+		_selectionRenderer = ((Transform)Instantiate(SelectionPrefab,transform.position,Quaternion.identity)).GetComponent<Renderer>();
 		_selectionRenderer.transform.parent = transform;
-		_selectionRenderer.transform.localScale = new Vector3(1.5f,1.5f,1.5f);
+
+		UpdateSelectionScale();
+		//_selectionRenderer.transform.parent = _shield.transform;
 		_selectionRenderer.material.color = new Color(0,1,0,.3f);
 		_selectionRenderer.enabled = false;
 	}
@@ -53,6 +57,19 @@ public class Planet : MonoBehaviour {
 			_energy += EnergyRegenRate * transform.localScale.x * Time.deltaTime;
 
 		transform.Rotate(Vector3.up,_rotationSpeed*Time.deltaTime);
+
+		UpdateSelectionScale();
+	}
+
+	void UpdateSelectionScale()
+	{
+		if (_selectionRenderer.enabled == false)
+			return;
+
+		float scale = 1 + ((_shield.transform.localScale.x - 1) * _selectionPercent);
+
+		_selectionRenderer.transform.localScale = Vector3.one * scale;
+
 	}
 
 	float GetStartEnergy()
@@ -61,24 +78,16 @@ public class Planet : MonoBehaviour {
 		return radiusDiff / Shield.EnergyToShieldRadius;
 
 	}
-	
 
-	public float OnFiredMissiles()
-	{
-		float energyUsed = _energy * DefaultEnergyUsedPerFire;
-		_energy -= energyUsed;
-
-		return energyUsed;
-	}
 
 	public void OnMissileHit(Missiles missiles)
 	{
 
 
 		if (missiles.GetFiringPlanetType() == _playerType)
-			_energy += missiles.GetEnergyPerMissile();
+			_energy += missiles.TakeMissileEnergy();
 		else
-			_energy -= missiles.GetEnergyPerMissile();
+			_energy -= missiles.TakeMissileEnergy();
 
 
 		if (_energy <= 0)
@@ -132,6 +141,26 @@ public class Planet : MonoBehaviour {
 	public float GetEnergy()
 	{
 		return _energy;
+	}
+
+	public void SetSelectionPercent(float percent)
+	{
+		_selectionPercent = percent;
+	}
+
+	public void IncreaseSelectionPercent(float percent)
+	{
+		_selectionPercent += percent;
+
+		if (_selectionPercent > 1)
+			_selectionPercent = 1;
+	}
+	public float TakeSelectionEnergy()
+	{
+		float amount = _energy * _selectionPercent;
+		_energy -= amount;
+
+		return amount;
 	}
 
 	float SphereVolume(float radius)

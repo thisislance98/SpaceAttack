@@ -49,8 +49,8 @@ public class Missiles : MonoBehaviour {
 		{
 			for (int i=0; i < (_particleList.Count-size); i++)
 			{
-				_particleList.RemoveAt(0);
 				_targetPlanet.SendMessage("OnMissileHit",this);
+				_particleList.RemoveAt(0);
 			}
 
 			if (_particleList.Count == 0)
@@ -58,25 +58,34 @@ public class Missiles : MonoBehaviour {
 		}
 	}
 
-	public float GetEnergyPerMissile()
+	public float TakeMissileEnergy()
 	{
-		return _totalEnergy / particleSystem.emissionRate;
+
+		float numParticles = _particleList.Count;
+		float energy = _totalEnergy / numParticles;
+
+
+		_totalEnergy -= energy;
+		if (_totalEnergy < 0)
+			_totalEnergy = 0;
+
+		return energy;
 	}
 
 	void OnAllMisslesExploded()
 	{
-		Destroy(_path);
+		Destroy(_path.gameObject);
 		Destroy(gameObject);
 	}
 
-	public void Fire(SplineTrailRenderer path, GameObject targetPlanet, GameObject firingPlanet)
+	public void Fire(SplineTrailRenderer path, GameObject targetPlanet, GameObject firingPlanet, float energy)
 	{
 		_path = path;
 		_targetPlanet = targetPlanet.GetComponent<Planet>();
 		_firingPlanet = firingPlanet.GetComponent<Planet>();
 		_firingPlanetType = _firingPlanet.GetPlayerType();
+		_totalEnergy = energy;
 
-		_totalEnergy = firingPlanet.GetComponent<Planet>().OnFiredMissiles();
 		particleSystem.emissionRate = _totalEnergy * EnergyToNumMissiles;
 
 	}
@@ -150,28 +159,28 @@ public class Missiles : MonoBehaviour {
 	}
 	
 
-	public static void FireMissiles (SplineTrailRenderer missilePath, GameObject firingPlanet, GameObject targetPlanet)
+	public static void FireMissiles (SplineTrailRenderer missilePath, GameObject firingPlanet, GameObject targetPlanet, float energy)
 	{
 		if (missilePath.spline.Length() == 0)
 		{
 			PathManager.Instance.StartCoroutine(PathManager.Instance.CreatePath(missilePath,firingPlanet,targetPlanet, success =>
 			{
 				if (success)
-					FireHelper(missilePath,firingPlanet,targetPlanet);
+					FireHelper(missilePath,firingPlanet,targetPlanet,energy);
 			}));
 		}
 		else
-			FireHelper(missilePath,firingPlanet,targetPlanet);
+			FireHelper(missilePath,firingPlanet,targetPlanet,energy);
 
 	}
 
-	static void FireHelper(SplineTrailRenderer missilePath, GameObject firingPlanet, GameObject targetPlanet)
+	static void FireHelper(SplineTrailRenderer missilePath, GameObject firingPlanet, GameObject targetPlanet, float energy)
 	{
 		GameObject missiles;
 		missiles = (GameObject)Instantiate (Resources.Load<GameObject>("Missiles"));
 		missiles.GetComponent<ParticleSystem>().startLifetime = missilePath.spline.Length () / 5.0f;
 		missiles.transform.position = missilePath.spline.FindPositionFromDistance (0);
-		missiles.GetComponent<Missiles>().Fire (missilePath, targetPlanet, firingPlanet);
+		missiles.GetComponent<Missiles>().Fire (missilePath, targetPlanet, firingPlanet,energy);
 	}
 
 }

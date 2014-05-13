@@ -90,6 +90,7 @@ public class SplineTrailRenderer : MonoBehaviour
 		Init();
 	}
 
+	Vector3 _lastPos;
 	private void LateUpdate()
 	{
 		if(emit)
@@ -104,10 +105,16 @@ public class SplineTrailRenderer : MonoBehaviour
 				Vector3.Distance(knots[knots.Count-4].position, point) > emissionDistance)
 			{
 				knots.Add(new Knot(point));
+
 			}
 		}
 
-		RenderMesh();
+		if (transform.position != _lastPos)
+			RenderMesh();
+
+		_lastPos = transform.position;
+
+
 	}
 	
 	private void RenderMesh() 

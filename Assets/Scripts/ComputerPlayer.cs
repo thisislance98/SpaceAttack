@@ -84,7 +84,8 @@ public class ComputerPlayer : MonoBehaviour {
 
 			SplineTrailRenderer path = ((GameObject)Instantiate(MissilePathPrefab,firingPlanet.transform.position,Quaternion.identity)).GetComponent<SplineTrailRenderer>();
 			path.renderer.enabled = false;
-			Missiles.FireMissiles(path,firingPlanet,targetPlanet);
+			float energy = firingPlanet.GetComponent<Planet>().TakeSelectionEnergy();
+			Missiles.FireMissiles(path,firingPlanet,targetPlanet,energy);
 			_lastTarget = targetPlanet;
 		}
 

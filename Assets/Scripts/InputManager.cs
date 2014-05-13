@@ -13,12 +13,15 @@ public class InputManager : MonoBehaviour
 	public Vector3 trailOffset = new Vector3(0, 0.02f, 0);
 	public float doubleTapTime = 1;
 	public GameObject MissilePathPrefab; 
+	public float DefaultEnergyPercent = .5f;
+	public float SelectionPercentIncreaseSpeed = 1;
+
 
 
 	List<SplineTrailRenderer> _missilePaths = new List<SplineTrailRenderer>();
 	List<GameObject> _firingPlanets = new List<GameObject>();
 
-
+	
 	bool wasTouchingShield = false;
 	float _lastTapTime;
 	Vector3 _touchStartPos;
@@ -29,6 +32,7 @@ public class InputManager : MonoBehaviour
 
 	void Awake()
 	{
+		Application.targetFrameRate = 60;
 		Instance = this;
 	}
 
@@ -44,29 +48,28 @@ public class InputManager : MonoBehaviour
 			{
 				if (hit.transform.GetComponent<Planet>().IsMine())
 				{
-
 					Select(hit.transform.gameObject);
 					_touchStartPos = Input.mousePosition;
 					_isTouching = true;
 				}
 			}
 		}
-		else if(Input.GetMouseButtonUp(0))
+		else if(Input.GetMouseButtonUp(0)) 
 		{
 
 			RaycastHit hit;
 			_isTouching = false;
 
-			// is their a selection and a path if so then if they are touching a planet..fire
-			if (IsTouchingLayer(playerLayerName, out hit) && !IsTouchMyPlanet() && _missilePaths.Count > 0)
+			// on touch up.. is their a selection and a path if so then if they are touching a planet..fire
+			if (IsTouchingLayer(playerLayerName, out hit) &&  _missilePaths.Count > 0 && (!IsTouchMyPlanet() || _missilePaths[0].spline.Length() > 0))
 			{
 
 				for (int i=_missilePaths.Count-1; i >= 0; i--)
 				{
 					SplineTrailRenderer missilePath = _missilePaths[i];
 					GameObject firingPlanet = _firingPlanets[i];
-				
-					Missiles.FireMissiles (missilePath, firingPlanet, hit.transform.gameObject);
+					float energy = firingPlanet.GetComponent<Planet>().TakeSelectionEnergy();
+					Missiles.FireMissiles (missilePath, firingPlanet, hit.transform.gameObject, energy);
 
 					Unselect(missilePath,firingPlanet);
 				}
@@ -76,10 +79,14 @@ public class InputManager : MonoBehaviour
 			{
 			
 				for (int j=_missilePaths.Count-1; j >= 0; j--)
+				{
+					Destroy (_missilePaths[j].gameObject);
 					Unselect (_missilePaths[j],_firingPlanets[j]);
+				
+				}
 
 			}
-			else // just tapped on own planet
+			else // just tapped on own planet, if double tap.. select all
 			{
 				RaycastHit tapHit;
 				// select all if was wa double tap
@@ -92,19 +99,29 @@ public class InputManager : MonoBehaviour
 
 			}
 		}
-		else if(Input.GetMouseButton(0)) // otherwise they are just moving the path(s)
+		else if(Input.GetMouseButton(0)) // they are holding mouse button or touch down
 		{
 
-			if (_isTouching && (Input.mousePosition - _touchStartPos).magnitude > 3)
+			if (_isTouching)
 			{
-				RaycastHit hit;
+				// they are just moving the path(s)
+				if ( (Input.mousePosition - _touchStartPos).magnitude > 3)
+				{
+					RaycastHit hit;
 
-				// don't do anything if they are touching within the firing planet
-				if (IsTouchMyPlanet(out hit) && _firingPlanets.Count > 0 && hit.transform.gameObject == _firingPlanets[_firingPlanets.Count-1])
-					return;
+					// don't do anything if they are touching within the firing planet
+					if (IsTouchMyPlanet(out hit) && _firingPlanets.Count > 0 && hit.transform.gameObject == _firingPlanets[_firingPlanets.Count-1])
+						return;
 
-				OnSelectionMove();
-				wasTouchingShield = IsTouchingLayer(shieldLayerName);
+					OnSelectionMove();
+					wasTouchingShield = IsTouchingLayer(shieldLayerName);
+				}
+				else if (_missilePaths[0].spline.Length() == 0) // they are holding down on their planet
+				{
+					foreach (GameObject firingPlanet in _firingPlanets)
+						firingPlanet.GetComponent<Planet>().IncreaseSelectionPercent(Time.deltaTime * SelectionPercentIncreaseSpeed);
+
+				}
 			}
 
 
@@ -155,7 +172,6 @@ public class InputManager : MonoBehaviour
 			Unselect(_missilePaths[index],planet);
 
 		}
-
 	}
 
 	void Select(GameObject firingPlanet)
@@ -167,7 +183,7 @@ public class InputManager : MonoBehaviour
 		
 		_missilePaths.Add(path);
 		_firingPlanets.Add(firingPlanet);
-		
+		firingPlanet.GetComponent<Planet>().SetSelectionPercent(DefaultEnergyPercent);
 		
 		firingPlanet.SendMessage("SetSelected",true);
 	}
@@ -249,7 +265,6 @@ public class InputManager : MonoBehaviour
 	{
 		return (Physics.Raycast(Camera.main.ScreenPointToRay(new Vector3(Input.mousePosition.x, 
 		                                                                 Input.mousePosition.y, 0)), out hit, float.MaxValue, LayerNameToIntMask(layerName)));
-
 
 	}
 
